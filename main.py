@@ -1,7 +1,7 @@
 import telebot
 from telebot import types
 
-BOT_TOKEN = "8346793148:AAGZFrpj5ZvxhnlUXm5IAYmybszPc1UU0fk"
+BOT_TOKEN = "8346793148:AAE1UTWzP0KUc3l4nbNvmtIHGVt-GoaTyyc"
 INVITE_LINK = "https://t.me/+LqVblnrPGUgyMDZl"
 
 bot = telebot.TeleBot(BOT_TOKEN)
