@@ -1,33 +1,77 @@
 import os
-from telebot import TeleBot, types
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-bot = TeleBot(BOT_TOKEN)
 
-LINK1 = "https://t.me/+LqVblnrPGUgyMDZl"
-LINK2 = "https://t.me/+yoY115wHhqVmODhl"
-LINK3 = "https://t.me/+oYGxMsFWzrpjYjU1"
-LINK4 = "https://t.me/+OD25svaX8vYyZDg1"
-LINK5 = "https://t.me/+Ft2l_-QwyA03OGNl"
-PANEL_LINK = "https://t.me/+LqVblnrPGUgyMDZl"
+CHANNELS = [
+    {"name": "Channel 1", "link": "https://t.me/+j88DIVGmn2E5NzU1", "id": -1002749876541},
+    {"name": "Channel 2", "link": "https://t.me/+Z6d9MP1fJDZkYmQ1", "id": -1002749876542},
+    {"name": "Channel 3", "link": "https://t.me/+HRybxM6SFVZjNzg0", "id": -1002749876543},
+    {"name": "Channel 4", "link": "https://t.me/+_M8cMRaOYrlmZWE9", "id": -1002749876544},
+    {"name": "Channel 5", "link": "https://t.me/+swQYM_Z0krdkYjM1", "id": -1002749876545},
+]
+VERIFY_CHANNEL = "https://t.me/+LqVblnrPGUgyMDZl"
 
-@bot.message_handler(commands=['start'])
-def start(message):
-    markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton("Join Channel 1 🔥", url=LINK1))
-    markup.add(types.InlineKeyboardButton("Join Channel 2 🔥", url=LINK2))
-    markup.add(types.InlineKeyboardButton("Join Channel 3 🔥", url=LINK3))
-    markup.add(types.InlineKeyboardButton("Join Channel 4 🔥", url=LINK4))
-    markup.add(types.InlineKeyboardButton("Join Channel 5 🔥", url=LINK5))
-    markup.add(types.InlineKeyboardButton("✅ I Joined - Get Panel", callback_data="joined"))
-    bot.send_message(message.chat.id, "🔥 Panel lene ke liye 5 Channel Join karo 👇\nSab par alag link hai!", reply_markup=markup)
+async def check_status(bot, user_id):
+    s = {}
+    for ch in CHANNELS:
+        try:
+            m = await bot.get_chat_member(ch["id"], user_id)
+            s[ch["name"]] = m.status not in ['left','kicked']
+        except:
+            s[ch["name"]] = False
+    return s
 
-@bot.callback_query_handler(func=lambda call: True)
-def handle(call):
-    if call.data == "joined":
-        markup2 = types.InlineKeyboardMarkup()
-        markup2.add(types.InlineKeyboardButton("GET PANEL OR KEY 🔑", url=PANEL_LINK))
-        markup2.add(types.InlineKeyboardButton("GET KEY 🔑", url=PANEL_LINK))
-        bot.send_message(call.message.chat.id, "✅ Thanks for joining!\nNeeche se Panel / Key le lo 👇", reply_markup=markup2)
+def make_keyboard(status=None):
+    def dot(n):
+        if not status: return "🔴"
+        return "🟢" if status.get(n) else "🔴"
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton(f"{dot('Channel 1')} Channel 1", url=CHANNELS[0]["link"]),
+         InlineKeyboardButton(f"{dot('Channel 2')} Channel 2", url=CHANNELS[1]["link"])],
+        [InlineKeyboardButton(f"{dot('Channel 3')} Channel 3", url=CHANNELS[2]["link"]),
+         InlineKeyboardButton(f"{dot('Channel 4')} Channel 4", url=CHANNELS[3]["link"])],
+        [InlineKeyboardButton(f"{dot('Channel 5')} Channel 5", url=CHANNELS[4]["link"])],
+        [InlineKeyboardButton("✅ VERIFY JOINED", callback_data="verify")]
+    ])
 
-bot.infinity_polling()
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = f"""💎✨ WELCOME, {update.effective_user.first_name} ✨💎
+
+🔥 WELCOME TO DRIP CLIENT 🔥
+___________________________
+
+🔐 JOIN ALL CHANNELS TO CONTINUE
+
+🔴 1. Tap all channel buttons
+🟢 2. Join each channel
+🔴 3. Press VERIFY JOINED
+🟢 4. Continue after verification
+
+Join All Channel Mod Apk Links 🔗❤
+___________________________
+
+⚡ FAST • SECURE • FREE ⚡
+"""
+    await update.message.reply_text(text, reply_markup=make_keyboard())
+
+async def verify(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    await q.answer()
+    status = await check_status(context.bot, q.from_user.id)
+    not_joined = [k for k,v in status.items() if not v]
+    if not_joined:
+        await q.edit_message_reply_markup(reply_markup=make_keyboard(status))
+        await q.message.reply_text(f"❌ Baki hai: {', '.join(not_joined)}")
+    else:
+        await q.message.reply_text("✅ Done!", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔑 VERIFY GET KEY", url=VERIFY_CHANNEL)]]))
+
+def main():
+    app = Application.builder().token(BOT_TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CallbackQueryHandler(verify, pattern="verify"))
+    app.run_polling()
+
+if __name__ == "__main__":
+    main()
