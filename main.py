@@ -1,29 +1,28 @@
-import os
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import Application, CommandHandler, ContextTypes
+import telebot
+from telebot import types
 
-TOKEN = os.environ.get("8827274778:AAEWpWMAL6D5R26JUxcmtl_AxD2ehm2VH_0")
+BOT_TOKEN = "8346793148:AAGZFrpj5ZvxhnlUXm5IAYmybszPc1UU0fk"
+INVITE_LINK = "https://t.me/+LqVblnrPGUgyMDZl"
 
-LINKS = [
-    ("Channel 1", "https://t.me/+kgcuP0beVJFlMTBl"),
-    ("Channel 2", "https://t.me/+TsnRewwQjtgyMWI1"),
-    ("Channel 3", "https://t.me/+qaju-Z1MpUMyYTBl"),
-    ("Channel 4", "https://t.me/+PmNlaBj7WCk4ZjY1"),
-    ("Channel 5", "https://t.me/+LgxFzjXBp840MGVl"),
-    ("Channel 6", "https://t.me/+UhajwZ_6h_kwYmJl"),
-    ("Channel 7", "https://t.me/+q0RvCoA_Vic4ZTc1"),
-]
+bot = telebot.TeleBot(BOT_TOKEN)
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    kb = []
-    for i in range(0, len(LINKS), 2):
-        kb.append([InlineKeyboardButton(t, url=u) for t, u in LINKS[i:i+2]])
-    await update.message.reply_text("🔐 P2077 KING BOT\n\nSab join karo 👇", reply_markup=InlineKeyboardMarkup(kb))
+@bot.message_handler(commands=['start'])
+def start(message):
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    markup.add(types.InlineKeyboardButton("Join Channel 1 🔥", url=INVITE_LINK))
+    markup.add(types.InlineKeyboardButton("Join Channel 2 🔥", url=INVITE_LINK))
+    markup.add(types.InlineKeyboardButton("Join Channel 3 🔥", url=INVITE_LINK))
+    markup.add(types.InlineKeyboardButton("Join Channel 4 🔥", url=INVITE_LINK))
+    markup.add(types.InlineKeyboardButton("Join Channel 5 🔥", url=INVITE_LINK))
+    markup.add(types.InlineKeyboardButton("✅ I Joined - Get Panel", callback_data="check"))
+    bot.send_message(message.chat.id, "Panel lene ke liye 5 baar join karo 👇\n\nSame link hai, 5 baar click karke join ho jao", reply_markup=markup)
 
-def main():
-    app = Application.builder().token(TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.run_polling()
+@bot.callback_query_handler(func=lambda call: True)
+def check(call):
+    try:
+        with open('panel.jpg','rb') as photo:
+            bot.send_photo(call.message.chat.id, photo, caption="🔥 FREE FIRE NON-ROOT ANTIBAN PANEL 🔥\n\nBR-CS-CUSTOM WORKING 100%")
+    except:
+        bot.send_message(call.message.chat.id, "panel.jpg upload nahi hua! Github me panel.jpg naam se photo upload karo")
 
-if __name__ == "__main__":
-    main()
+bot.infinity_polling()
