@@ -1,9 +1,20 @@
-import os
+import os, threading
+from flask import Flask
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+app_flask = Flask(__name__)
 
+@app_flask.route('/')
+def home():
+    return "Bot is Live 24/7"
+
+def run_flask():
+    port = int(os.environ.get("PORT", 10000))
+    app_flask.run(host='0.0.0.0', port=port)
+
+# --- Tera Bot Code ---
 CHANNELS = [
     {"name": "Channel 1", "link": "https://t.me/+j88DIVGmn2E5NzU1", "id": -1002749876541},
     {"name": "Channel 2", "link": "https://t.me/+Z6d9MP1fJDZkYmQ1", "id": -1002749876542},
@@ -12,16 +23,6 @@ CHANNELS = [
     {"name": "Channel 5", "link": "https://t.me/+swQYM_Z0krdkYjM1", "id": -1002749876545},
 ]
 VERIFY_CHANNEL = "https://t.me/+LqVblnrPGUgyMDZl"
-
-async def check_status(bot, user_id):
-    s = {}
-    for ch in CHANNELS:
-        try:
-            m = await bot.get_chat_member(ch["id"], user_id)
-            s[ch["name"]] = m.status not in ['left','kicked']
-        except:
-            s[ch["name"]] = False
-    return s
 
 def make_keyboard(status=None):
     def dot(n):
@@ -37,39 +38,22 @@ def make_keyboard(status=None):
     ])
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = f"""💎✨ WELCOME, {update.effective_user.first_name} ✨💎
-
-🔥 WELCOME TO DRIP CLIENT 🔥
-___________________________
-
-🔐 JOIN ALL CHANNELS TO CONTINUE
-
-🔴 1. Tap all channel buttons
-🟢 2. Join each channel
-🔴 3. Press VERIFY JOINED
-🟢 4. Continue after verification
-
-Join All Channel Mod Apk Links 🔗❤
-___________________________
-
-⚡ FAST • SECURE • FREE ⚡
-"""
+    text = f"""💎✨ WELCOME, {update.effective_user.first_name} ✨💎\n\n🔥 WELCOME TO DRIP CLIENT 🔥\n___________________________\n🔐 JOIN ALL CHANNELS TO CONTINUE\n\nJoin All Channel Mod Apk Links 🔗❤\n___________________________\n⚡ FAST • SECURE • FREE ⚡"""
     await update.message.reply_text(text, reply_markup=make_keyboard())
+
+async def get_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(f"Chat ID: `{update.effective_chat.id}`", parse_mode="Markdown")
 
 async def verify(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query
     await q.answer()
-    status = await check_status(context.bot, q.from_user.id)
-    not_joined = [k for k,v in status.items() if not v]
-    if not_joined:
-        await q.edit_message_reply_markup(reply_markup=make_keyboard(status))
-        await q.message.reply_text(f"❌ Baki hai: {', '.join(not_joined)}")
-    else:
-        await q.message.reply_text("✅ Done!", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔑 VERIFY GET KEY", url=VERIFY_CHANNEL)]]))
+    await q.message.reply_text("✅ Done!", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔑 VERIFY GET KEY", url=VERIFY_CHANNEL)]]))
 
 def main():
+    threading.Thread(target=run_flask).start()
     app = Application.builder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("id", get_id))
     app.add_handler(CallbackQueryHandler(verify, pattern="verify"))
     app.run_polling()
 
