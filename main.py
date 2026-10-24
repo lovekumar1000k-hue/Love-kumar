@@ -9,12 +9,12 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 app_flask = Flask(__name__)
 @app_flask.route('/')
 def home():
-    return "Bot is Live 24/7 - 8 Channels"
+    return "Bot is Live 24/7 - 10 Channels"
 def run_flask():
     port = int(os.environ.get("PORT", 10000))
     app_flask.run(host='0.0.0.0', port=port)
 
-# --- TERE 8 CHANNELS ---
+# --- TERE 10 CHANNELS ---
 CHANNELS = [
     {"name": "Channel 1", "link": "https://t.me/+j88DIVGmn2E5NzU1"},
     {"name": "Channel 2", "link": "https://t.me/+mnPocSRmQlwyMmJl"},
@@ -24,6 +24,8 @@ CHANNELS = [
     {"name": "Channel 6", "link": "https://t.me/+swQYM_Z0krdkYjM1"},
     {"name": "Channel 7", "link": "https://t.me/+_M8cMRaOYrlmZWE9"},
     {"name": "Channel 8", "link": "https://t.me/+xJMM2UHedVhjMGI9"},
+    {"name": "Channel 9", "link": "https://t.me/+vRvc1P5mRqsxZTU9"},
+    {"name": "Channel 10", "link": "https://t.me/+HRybxM6SFVZjNzg0"},
 ]
 
 VERIFY_CHANNEL = "https://t.me/+d7y1Wl2qRGphMTg1"
@@ -38,6 +40,8 @@ def make_keyboard():
          InlineKeyboardButton(f"🔴 Channel 6", url=CHANNELS[5]["link"])],
         [InlineKeyboardButton(f"🔴 Channel 7", url=CHANNELS[6]["link"]),
          InlineKeyboardButton(f"🔴 Channel 8", url=CHANNELS[7]["link"])],
+        [InlineKeyboardButton(f"🔴 Channel 9", url=CHANNELS[8]["link"]),
+         InlineKeyboardButton(f"🔴 Channel 10", url=CHANNELS[9]["link"])],
         [InlineKeyboardButton("✅ VERIFY JOINED", callback_data="verify")]
     ])
 
@@ -46,7 +50,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 🔥 WELCOME TO DRIP CLIENT 🔥
 ___________________________
-🔐 JOIN ALL 8 CHANNELS TO CONTINUE
+🔐 JOIN ALL 10 CHANNELS TO CONTINUE
 
 Join All Channel Mod Apk Links 🔗❤
 ___________________________
@@ -72,7 +76,7 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("id", get_id))
     app.add_handler(CallbackQueryHandler(verify, pattern="verify"))
-    print("Bot Started with 8 Channels...")
+    print("Bot Started with 10 Channels...")
     app.run_polling()
 
 if __name__ == "__main__":
