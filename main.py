@@ -1,86 +1,84 @@
-import os, threading
+import os
+import threading
 from flask import Flask
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+import sqlite3
+from telegram import Update
+from telegram.ext import Application, CommandHandler, ChatMemberHandler, ContextTypes
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-
-# Flask - 24/7 Live ke liye
+# --- FLASK FOR RENDER LIVE ---
 app_flask = Flask(__name__)
 @app_flask.route('/')
 def home():
-    return "Bot is Live 24/7 - 11 Channels"
+    return "BOT LIVE - Owner Bot Running"
 
 def run_flask():
     port = int(os.environ.get("PORT", 10000))
-    app_flask.run(host='0.0.0.0', port=port)
+    app_flask.run(host="0.0.0.0", port=port)
 
-# --- TERE 11 CHANNELS ---
-CHANNELS = [
-    {"name": "Channel 1", "link": "https://t.me/+j88DIVGmn2E5NzU1"},
-    {"name": "Channel 2", "link": "https://t.me/+mnPocSRmQlwyMmJl"},
-    {"name": "Channel 3", "link": "https://t.me/+6UDI9GKqHEphNDk9"},
-    {"name": "Channel 4", "link": "https://t.me/+Z6d9MP1fJDZkYmQ1"},
-    {"name": "Channel 5", "link": "https://t.me/+ADDtPC_lBFNmY2U1"},
-    {"name": "Channel 6", "link": "https://t.me/+swQYM_Z0krdkYjM1"},
-    {"name": "Channel 7", "link": "https://t.me/+_M8cMRaOYrlmZWE9"},
-    {"name": "Channel 8", "link": "https://t.me/+xJMM2UHedVhjMGI9"},
-    {"name": "Channel 9", "link": "https://t.me/+vRvc1P5mRqsxZTU9"},
-    {"name": "Channel 10", "link": "https://t.me/+HRybxM6SFVZjNzg0"},
-    {"name": "Channel 11", "link": "https://t.me/+bXf7mF-0Lh04YTY9"},
-]
+# --- DATABASE ---
+conn = sqlite3.connect("owners.db", check_same_thread=False)
+conn.execute("CREATE TABLE IF NOT EXISTS channels (channel_id TEXT PRIMARY KEY, owner_id TEXT)")
+conn.commit()
 
-VERIFY_CHANNEL = "https://t.me/+d7y1Wl2qRGphMTg1"
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
-def make_keyboard():
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔴 Channel 1", url=CHANNELS[0]["link"]),
-         InlineKeyboardButton("🔴 Channel 2", url=CHANNELS[1]["link"])],
-        [InlineKeyboardButton("🔴 Channel 3", url=CHANNELS[2]["link"]),
-         InlineKeyboardButton("🔴 Channel 4", url=CHANNELS[3]["link"])],
-        [InlineKeyboardButton("🔴 Channel 5", url=CHANNELS[4]["link"]),
-         InlineKeyboardButton("🔴 Channel 6", url=CHANNELS[5]["link"])],
-        [InlineKeyboardButton("🔴 Channel 7", url=CHANNELS[6]["link"]),
-         InlineKeyboardButton("🔴 Channel 8", url=CHANNELS[7]["link"])],
-        [InlineKeyboardButton("🔴 Channel 9", url=CHANNELS[8]["link"]),
-         InlineKeyboardButton("🔴 Channel 10", url=CHANNELS[9]["link"])],
-        [InlineKeyboardButton("🔴 Channel 11", url=CHANNELS[10]["link"])],
-        [InlineKeyboardButton("✅ VERIFY JOINED", callback_data="verify")]
-    ])
-
+# --- /start COMMAND ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = f"""💎✨ WELCOME, {update.effective_user.first_name} ✨💎
-
-🔥 WELCOME TO DRIP CLIENT 🔥
-___________________________
-🔐 JOIN ALL 11 CHANNELS TO CONTINUE
-
-Join All 11 Channel Mod Apk Links 🔗❤
-___________________________
-⚡ FAST • SECURE • FREE ⚡"""
-    await update.message.reply_text(text, reply_markup=make_keyboard())
-
-async def verify(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    q = update.callback_query
-    await q.answer()
-    await q.message.reply_text(
-        "✅ Verified! Ab Key Lo 👇",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("🔑 VERIFY GET KEY", url=VERIFY_CHANNEL)]
-        ])
+    await update.message.reply_text(
+        "✅ Bot Live hai!\n\n"
+        "Mujhe apne Channel me Admin banao, tum automatic Owner ban jaoge.\n\n"
+        "Command:\n"
+        "/my_channels - Tumhare channels dekho"
     )
 
-async def get_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(f"ID: `{update.effective_chat.id}`", parse_mode="Markdown")
+async def my_channels(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    cur = conn.cursor()
+    cur.execute("SELECT channel_id FROM channels WHERE owner_id=?", (user_id,))
+    rows = cur.fetchall()
+    if not rows:
+        await update.message.reply_text("Tum abhi kisi channel ke owner nahi ho.")
+    else:
+        txt = "Tumhare Channels:\n" + "\n".join([r[0] for r in rows])
+        await update.message.reply_text(txt)
 
+# --- JAB CHANNEL ME ADMIN BANAYE ---
+async def handle_my_chat_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Jab bot ko kisi channel/group me add kiya jaye
+    if update.my_chat_member:
+        chat = update.my_chat_member.chat
+        new_status = update.my_chat_member.new_chat_member.status
+        old_status = update.my_chat_member.old_chat_member.status
+        
+        # Agar bot ko admin banaya gaya
+        if new_status in ["administrator", "member"] and old_status in ["left", "kicked", "member"]:
+            if chat.type == "channel":
+                owner_id = str(update.my_chat_member.from_user.id)
+                channel_id = str(chat.id)
+                
+                # Save owner
+                conn.execute("INSERT OR REPLACE INTO channels VALUES (?, ?)", (channel_id, owner_id))
+                conn.commit()
+                
+                try:
+                    await context.bot.send_message(
+                        chat_id=owner_id,
+                        text=f"🔥 Congrats! Tum {chat.title} ({channel_id}) ke OWNER ban gaye!\n\nAb is channel ka control tumhare paas hai."
+                    )
+                except:
+                    pass
+
+# --- MAIN ---
 def main():
-    threading.Thread(target=run_flask).start()
+    threading.Thread(target=run_flask, daemon=True).start()
+    
+    if not BOT_TOKEN:
+        print("BOT_TOKEN nahi mila! Render Environment me daalo")
+        return
+
     app = Application.builder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("id", get_id))
-    app.add_handler(CallbackQueryHandler(verify, pattern="verify"))
-    print("Bot Started with 11 Channels...")
-    app.run_polling()
-
-if __name__ == "__main__":
-    main()
+    app.add_handler(CommandHandler("my_channels", my_channels))
+    app.add_handler(ChatMemberHandler(handle_my_chat_member, ChatMemberHandler.MY_CHAT_MEMBER))
+    
+    print("BOT LIVE - Owner Bot Started
