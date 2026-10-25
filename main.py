@@ -1,60 +1,64 @@
-import os
-from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
+import os, threading
+from flask import Flask
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
-# /start
+# Flask - 24/7 Live ke liye
+app_flask = Flask(__name__)
+@app_flask.route('/')
+def home():
+    return "Bot is Live 24/7 - 5 Channels"
+
+def run_flask():
+    port = int(os.environ.get("PORT", 10000))
+    app_flask.run(host='0.0.0.0', port=port)
+
+# --- TERE 5 CHANNELS ---
+CHANNELS = [
+    {"name": "Channel 1", "link": "https://t.me/+j88DIVGmn2E5NzU1"},
+    {"name": "Channel 2", "link": "https://t.me/+xJMM2UHedVhjMGI9"},
+    {"name": "Channel 3", "link": "https://t.me/+vRvc1P5mRqsxZTU9"},
+    {"name": "Channel 4", "link": "https://t.me/+6UDI9GKqHEphNDk9"},
+    {"name": "Channel 5", "link": "https://t.me/+bXf7mF-0Lh04YTY9"},
+]
+
+VERIFY_CHANNEL = "https://t.me/+d7y1Wl2qRGphMTg1"
+
+def make_keyboard():
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔴 Channel 1", url=CHANNELS[0]["link"]),
+         InlineKeyboardButton("🔴 Channel 2", url=CHANNELS[1]["link"])],
+        [InlineKeyboardButton("🔴 Channel 3", url=CHANNELS[2]["link"]),
+         InlineKeyboardButton("🔴 Channel 4", url=CHANNELS[3]["link"])],
+        [InlineKeyboardButton("🔴 Channel 5", url=CHANNELS[4]["link"])],
+        [InlineKeyboardButton("✅ VERIFY JOINED", callback_data="verify")]
+    ])
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "TRANSFER Bot ON hai ✅\n\n"
-        "Bot ke DM me: /add <channel_link>\n"
-        "Group me: Kisi ke msg pe reply karke /setowner"
+    text = f"""💎✨ WELCOME, {update.effective_user.first_name} ✨💎
+
+🔥 WELCOME TO DRIP CLIENT 🔥
+___________________________
+🔐 JOIN ALL 5 CHANNELS TO CONTINUE
+
+Join All 5 Channel Mod Apk Links 🔗❤
+___________________________
+⚡ FAST • SECURE • FREE ⚡"""
+    await update.message.reply_text(text, reply_markup=make_keyboard())
+
+async def verify(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    await q.answer()
+    await q.message.reply_text(
+        "✅ Verified! Ab Key Lo 👇",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔑 VERIFY GET KEY", url=VERIFY_CHANNEL)]
+        ])
     )
 
-# /add command (DM wala)
-async def add_channel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not context.args:
-        await update.message.reply_text("Use: /add https://t.me/+Ft2l_-QwyA03OGNl")
-        return
-    link = context.args[0]
-    # yahan tera 11 channel wala logic tha, wo yahan rahega
-    # demo ke liye:
-    await update.message.reply_text(f"Channel Add ho gaya: {link} ✅\nAb /earn se members ayenge.")
+async def get_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(f"ID: `{update.effective_chat.id}`", parse_mode="Markdown")
 
-# /setowner command (Group wala - TRANSFER jaisa)
-async def setowner(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Group me hi kaam karega
-    if update.effective_chat.type == 'private':
-        await update.message.reply_text("❌ Ye command DM me nahi, Group me use karo!\nGroup me kisi ke msg pe reply karke /setowner likho")
-        return
-
-    if not update.message.reply_to_message:
-        await update.message.reply_text("Kisi ke message pe REPLY karke /setowner likho")
-        return
-
-    try:
-        user = update.message.reply_to_message.from_user
-        await context.bot.promote_chat_member(
-            chat_id=update.effective_chat.id,
-            user_id=user.id,
-            can_change_info=True
-        )
-        await context.bot.set_chat_administrator_custom_title(
-            chat_id=update.effective_chat.id,
-            user_id=user.id,
-            custom_title="Owner ❤️"
-        )
-        await update.message.reply_text(f"Done! {user.first_name} ko Owner ❤️ bana diya (prank wala)")
-    except Exception as e:
-        await update.message.reply_text(f"Error: {e}\nBot ko Admin banao aur 'Add new admins' ON karo")
-
-def main():
-    app = Application.builder().token(BOT_TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("add", add_channel))
-    app.add_handler(CommandHandler("setowner", setowner))
-    app.run_polling()
-
-if __name__ == "__main__":
-    main()
+def main
